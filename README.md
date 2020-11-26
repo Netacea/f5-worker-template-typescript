@@ -23,7 +23,7 @@ Then run
 ```bash
 npm run build
 ```
-This will create a GZipped workspace ready to [upload](https://github.com/Netacea/f5-worker-template-typescript/wiki/IRules-LX#upload-workspace
+This will create a GZipped workspace ready to [upload](https://github.com/Netacea/f5-worker-template-typescript/wiki/IRules-LX#upload-workspace).
 
 ## ❗ Issues
 If you run into issues with this specific project, please feel free to file an issue [here](https://github.com/Netacea/f5-worker-template-typescript/issues).
