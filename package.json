@@ -8,7 +8,7 @@
     "lint": "npx eslint . --ext ts --fix",
     "build": "npm run build:webpack && npm run build:artifact",
     "build:webpack": "npx webpack",
-    "build:artifact": "(cd ./dist && chmod -R 777 . && tar -zcvf NetaceaF5.tar.gz ./* && mv ./NetaceaF5.tar.gz ../NetaceaF5.tar.gz)"
+    "build:artifact": "chmod -R 777 ./dist/ && tar -czvf ./NetaceaF5.tar.gz -C ./dist ."
   },
   "author": "Jack Scotson <jack.scotson@netacea.com> (https://netacea.com)",
   "license": "MIT",
