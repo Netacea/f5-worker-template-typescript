@@ -1,4 +1,4 @@
-name: Netacea F5 Worker Build
+name: Netacea F5 Create Release
 on:
   push:
     # Sequence of patterns matched against refs/tags
