@@ -30,7 +30,6 @@ when HTTP_REQUEST {
           HTTP::collect $content_length
       }
     } else { # Check reputation
-        # set result [ILX::call $handle check [IP::client_addr] $useragent [HTTP::method] [HTTP::uri] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"]]
         if {[catch {ILX::call $handle handleRequest [IP::client_addr] $useragent $method [HTTP::path] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"]} result]} {
            log local0.error  "Client - [IP::client_addr], ILX failure: could not reach mitigate API: $result"
            # Send user graceful error message, then exit event
@@ -71,7 +70,6 @@ when HTTP_REQUEST_DATA {
         set uri [HTTP::uri]
         set useragent [HTTP::header value "User-Agent"]
 
-        # set result [ILX::call $handle handleCaptcha [IP::client_addr] [HTTP::header value "User-Agent"] [HTTP::cookie value "_mitata"] [HTTP::payload]]
         if {[catch {ILX::call $handle handleRequest [IP::client_addr] $useragent $method [HTTP::path] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"] [HTTP::payload]} result]} {
            log local0.error  "Client - [IP::client_addr], ILX failure: could not handle captcha test"
            # Send user graceful error message, then exit event
@@ -92,7 +90,6 @@ when HTTP_REQUEST_DATA {
         set http_response_time [clock clicks -milliseconds]
         set request_time [ expr $http_response_time - $http_request_time ]
 
-        # ILX::call $handle ingest [IP::client_addr] $useragent 200 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
         if {[catch {ILX::call $handle ingest [IP::client_addr] $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
             log local0.error  "Client - [IP::client_addr], ILX failure: could not reach ingest API for passed captcha"
             # Send user graceful error message, then exit event
@@ -115,7 +112,6 @@ when HTTP_RESPONSE {
     set http_response_time [clock clicks -milliseconds]
     set request_time [ expr $http_response_time - $http_request_time ]
 
-    # ILX::call $handle ingest [IP::client_addr] $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
     if {[catch {ILX::call $handle ingest [IP::client_addr] $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time HTTP::mitata HTTP::sessionStatus} result]} {
        log local0.error  "Client - [IP::client_addr], ILX failure: could not reach ingest API"
        # Send user graceful error message, then exit event

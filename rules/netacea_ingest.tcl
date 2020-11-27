@@ -1,4 +1,5 @@
 when RULE_INIT {
+    # Enable this for debug logs!
     # set static::netacea_ingest_debug 0
 }
 
