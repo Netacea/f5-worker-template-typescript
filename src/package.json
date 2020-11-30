@@ -1,7 +1,0 @@
-{
-  "description": "iRules LX extension for integrating with Netacea",
-  "private": true,
-  "repository": {},
-  "engines": { "node": "6.9.1" },
-  "dependencies": { "f5-nodejs": "0.0.3" }
-}

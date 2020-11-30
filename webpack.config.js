@@ -36,7 +36,7 @@ module.exports = {
       { from: path.resolve(__dirname, 'rules/netacea_mitigate.tcl'), to: 'rules/netacea_mitigate.tcl' },
       { from: path.resolve(__dirname, 'src/node_version'), to: '' },
       { from: path.resolve(__dirname, 'src/version'), to: '' },
-      { from: path.resolve(__dirname, 'src/package.json'), to: 'extensions/netacea/package.json' },
+      { from: path.resolve(__dirname, './package.json'), to: 'extensions/netacea/package.json' },
       { from: path.resolve(__dirname, 'src/NetaceaConfig.json'), to: 'extensions/netacea/NetaceaConfig.json' }
     ])
   ],

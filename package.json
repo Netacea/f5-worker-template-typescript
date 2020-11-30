@@ -5,10 +5,10 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "lint": "npx eslint . --ext ts --fix",
     "build": "npm run build:webpack && npm run build:artifact",
     "build:webpack": "npx webpack",
-    "build:artifact": "chmod -R 777 ./dist/ && tar -czvf ./NetaceaF5.tar.gz -C ./dist ."
+    "build:artifact": "chmod -R 777 ./dist/ && tar -czvf ./NetaceaF5.tar.gz -C ./dist .",
+    "lint": "npx xo ./**/*.ts"
   },
   "author": "Jack Scotson <jack.scotson@netacea.com> (https://netacea.com)",
   "license": "MIT",
@@ -25,11 +25,21 @@
     "ts-node": "^9.0.0",
     "typescript": "^3.9.7",
     "webpack": "^5.1.0",
-    "webpack-cli": "^4.0.0"
+    "webpack-cli": "^4.0.0",
+    "xo": "^0.35.0"
+  },
+  "repository": {},
+  "engines": {
+    "node": "6.9.1"
   },
   "dependencies": {
-    "@netacea/f5": "^1.0.13",
-    "core-js": "^3.6.5",
-    "f5-nodejs": "^1.0.0"
+    "@netacea/f5": "^1.0.14",
+    "core-js": "^3.8.0",
+    "f5-nodejs": "^1.0.0",
+    "regenerator-runtime": "^0.13.7"
+  },
+  "xo": {
+    "space": true,
+    "semicolon": false
   }
 }

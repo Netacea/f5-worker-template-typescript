@@ -1,9 +1,8 @@
 name: Netacea F5 Create Release
 on:
   push:
-    # Sequence of patterns matched against refs/tags
     tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+    - 'v*'
 
 jobs:
   create-release:
@@ -33,18 +32,3 @@ jobs:
         asset_path: ./NetaceaF5.tar.gz
         asset_name: NetaceaF5.tar.gz
         asset_content_type: application/gzip
-
-# build:
-  #   name: Unit Test
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       node-version: [12.x, 14.x]
-  #   steps:
-  #   - uses: actions/checkout@v2
-  #   - name: Use Node.js ${{ matrix.node-version }}
-  #     uses: actions/setup-node@v1
-  #     with:
-  #       node-version: ${{ matrix.node-version }}
-  #   - run: npm install
-  #   - run: npm test
