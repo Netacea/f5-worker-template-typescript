@@ -8,7 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: Klemensas/action-autotag@stable
+    - id: 'auto_tag'
+      uses: Klemensas/action-autotag@stable
       with:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     - run: npm install
@@ -19,8 +20,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ setps.auto_tag.tagname }}
+        release_name: Release ${{ setps.auto_tag.tagname  }}
         draft: false
         prerelease: false
     - name: Upload Release Asset
