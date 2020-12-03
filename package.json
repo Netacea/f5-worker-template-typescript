@@ -1,6 +1,6 @@
 {
   "name": "netacea-f5-example",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Netacea F5 CDN integration Example",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
