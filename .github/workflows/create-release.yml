@@ -2,7 +2,7 @@ name: Netacea F5 Create Release
 on:
   push:
     tags:
-    - '*'
+      - '*'
 
 jobs:
   create-release:
