@@ -112,7 +112,7 @@ when HTTP_RESPONSE {
     set http_response_time [clock clicks -milliseconds]
     set request_time [ expr $http_response_time - $http_request_time ]
 
-    if {[catch {ILX::call $handle ingest [IP::client_addr] $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time HTTP::mitata HTTP::sessionStatus} result]} {
+    if {[catch {ILX::call $handle ingest [IP::client_addr] $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time [HTTP::mitata] [HTTP::sessionStatus]} result]} {
        log local0.error  "Client - [IP::client_addr], ILX failure: could not reach ingest API"
        # Send user graceful error message, then exit event
        return
