@@ -33,7 +33,7 @@
     "node": "6.9.1"
   },
   "dependencies": {
-    "@netacea/f5": "^1.0.14",
+    "@netacea/f5": "^1.0.16",
     "core-js": "^3.8.0",
     "f5-nodejs": "^1.0.0",
     "regenerator-runtime": "^0.13.7"
