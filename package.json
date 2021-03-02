@@ -1,6 +1,6 @@
 {
   "name": "netacea-f5-example",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Netacea F5 CDN integration Example",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -33,7 +33,7 @@
     "node": "6.9.1"
   },
   "dependencies": {
-    "@netacea/f5": "^1.0.18",
+    "@netacea/f5": "^1.0.19",
     "core-js": "^3.8.0",
     "f5-nodejs": "^1.0.0",
     "regenerator-runtime": "^0.13.7"
