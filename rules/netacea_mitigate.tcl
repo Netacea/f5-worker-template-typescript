@@ -11,6 +11,8 @@ when HTTP_REQUEST {
   set uri [HTTP::uri]
   set useragent [HTTP::header value "User-Agent"]
   set referer [HTTP::header value "referer"]
+  # strip route domain from ip
+  set clientaddress [regsub {%.*} [IP::client_addr] ""]
 
   # Handle Captcha
   if { [HTTP::path] equals "/AtaVerifyCaptcha" && [string tolower $method] eq "post"} {
@@ -32,8 +34,9 @@ when HTTP_REQUEST {
       HTTP::collect $content_length
     }
     } else { # Check reputation
-        if {[catch {ILX::call $handle handleRequest [IP::client_addr] $useragent $method [HTTP::path] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"]} result]} {
-          log local0.error  "Client - [IP::client_addr], ILX failure: could not reach mitigate API: $result"
+        # set result [ILX::call $handle check $clientaddress $useragent [HTTP::method] [HTTP::uri] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"]]
+        if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"]} result]} {
+          log local0.error  "Client - $clientaddress, ILX failure: could not reach mitigate API: $result"
           set result {"" 0 [] "" false "" []}
           # Send user graceful error message, then exit event
           return
@@ -55,13 +58,14 @@ when HTTP_REQUEST {
         # calcluate request time
         set http_response_time [clock clicks -milliseconds]
         set request_time [ expr {$http_response_time - $http_request_time} ]
-        ILX::call $handle ingest [IP::client_addr] $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
+        ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
         HTTP::respond 403 content $body Set-Cookie [join $cookies "; "]
       }
       if { [llength $injectHeaders] == 3} {
         HTTP::header insert "x-netacea-match" [ lindex $injectHeaders 0 ]
         HTTP::header insert "x-netacea-mitigate" [ lindex $injectHeaders 1 ]
         HTTP::header insert "x-netacea-captcha" [ lindex $injectHeaders 2 ]
+        HTTP::header insert "x-netacea-event-id" [ lindex $injectHeaders 3 ]
       }
     }
   }
@@ -72,9 +76,11 @@ when HTTP_REQUEST_DATA {
     set method [HTTP::method]
     set uri [HTTP::uri]
     set useragent [HTTP::header value "User-Agent"]
+    # strip route domain from ip
+    set clientaddress [regsub {%.*} [IP::client_addr] ""]
 
-    if {[catch {ILX::call $handle handleRequest [IP::client_addr] $useragent $method [HTTP::path] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"] [HTTP::payload]} result]} {
-      log local0.error  "Client - [IP::client_addr], ILX failure: could not handle captcha test"
+    if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"] [HTTP::payload]} result]} {
+      log local0.error  "Client - $clientaddress, ILX failure: could not handle captcha test"
       # Send user graceful error message, then exit event
       return
     }
@@ -92,9 +98,9 @@ when HTTP_REQUEST_DATA {
     # calcuate request time
     set http_response_time [clock clicks -milliseconds]
     set request_time [ expr {$http_response_time - $http_request_time} ]
-
-    if {[catch {ILX::call $handle ingest [IP::client_addr] $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
-      log local0.error  "Client - [IP::client_addr], ILX failure: could not reach ingest API for passed captcha"
+    # ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
+    if {[catch {ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
+      log local0.error  "Client - $clientaddress, ILX failure: could not reach ingest API for passed captcha"
       # Send user graceful error message, then exit event
       return
     }
@@ -110,6 +116,7 @@ when HTTP_RESPONSE {
       HTTP::header insert "Set-Cookie" $cookie
     }
   }
+  set clientaddress [regsub {%.*} [IP::client_addr] ""]
 
   # calcluate request time
   set http_response_time [clock clicks -milliseconds]
@@ -122,9 +129,9 @@ when HTTP_RESPONSE {
     set sessionStatus ""
     set mitata ""
   }
-
-  if {[catch {ILX::call $handle ingest [IP::client_addr] $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
-    log local0.error  "Client - [IP::client_addr], ILX failure: could not reach ingest API"
+  # ILX::call $handle ingest $clientaddress $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
+  if {[catch {ILX::call $handle ingest $clientaddress $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
+    log local0.error  "Client - $clientaddress, ILX failure: could not reach ingest API"
     # Send user graceful error message, then exit event
     return
   }
