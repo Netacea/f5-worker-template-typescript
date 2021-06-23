@@ -24,17 +24,16 @@ when HTTP_RESPONSE {
     if { $static::netacea_ingest_debug } {log local0.debug "HTTP_RESPONSE started"}
     set mitata ""
     set sessionStatus ""
+    # strip route domain from ip
+    set clientaddress [regsub {%.*} [IP::client_addr] ""]
 
     # calcluate request time
     set http_response_time [clock clicks -milliseconds]
     set request_time [ expr {$http_response_time - $http_request_time} ]
-    if {[catch {ILX::call $handle ingest [IP::client_addr] $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
-       log local0.error  "Client - [IP::client_addr], ILX failure: could not reach ingest API"
+    if {[catch {ILX::call $handle ingest $clientaddress $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
+       log local0.error  "Client - $clientaddress, ILX failure: could not reach ingest API"
        # Send user graceful error message, then exit event
        return
     }
     if { $static::netacea_ingest_debug } {log local0.debug "HTTP_RESPONSE ended"}
 }
-
-
-
