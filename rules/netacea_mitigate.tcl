@@ -35,7 +35,7 @@ when HTTP_REQUEST {
     }
     } else { # Check reputation
         # set result [ILX::call $handle check $clientaddress $useragent [HTTP::method] [HTTP::uri] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"]]
-        if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"]} result]} {
+        if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::header value "cookie"]} result]} {
           log local0.error  "Client - $clientaddress, ILX failure: could not reach mitigate API: $result"
           set result {"" 0 [] "" false "" []}
           # Send user graceful error message, then exit event
@@ -79,7 +79,7 @@ when HTTP_REQUEST_DATA {
     # strip route domain from ip
     set clientaddress [regsub {%.*} [IP::client_addr] ""]
 
-    if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"] [HTTP::payload]} result]} {
+    if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::header value "cookie"] [HTTP::payload]} result]} {
       log local0.error  "Client - $clientaddress, ILX failure: could not handle captcha test"
       # Send user graceful error message, then exit event
       return
