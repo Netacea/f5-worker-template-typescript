@@ -103,4 +103,4 @@ dist
 # TernJS port file
 .tern-port
 
-NetaceaF5.tar.gz
+NetaceaF5*.tar.gz

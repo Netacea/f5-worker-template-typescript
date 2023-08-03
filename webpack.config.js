@@ -4,7 +4,7 @@ const CopyPlugin = require('copy-webpack-plugin')
 module.exports = {
   mode: 'production',
   entry: path.resolve(__dirname, 'src'),
-  target: 'node',
+  target: 'node6.9',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'extensions/netacea/index.js'
@@ -17,18 +17,21 @@ module.exports = {
           {
             loader: 'babel-loader',
             options: {
-              "presets": ["@babel/preset-typescript", "@babel/preset-env"]
+              "presets": [
+                "@babel/preset-typescript",
+                "@babel/preset-env"
+              ]
             }
           }
         ]
       }
     ],
   },
-  // optimization: {
-  //   minimize: false
-  // },
+  optimization: {
+    minimize: true
+  },
   resolve: {
-    extensions: [ '.tsx', '.ts', '.js' ],
+    extensions: ['.tsx', '.ts', '.js'],
   },
   plugins: [
     new CopyPlugin([
