@@ -26,7 +26,11 @@ export default {
       browser: false,
       preferBuiltins: false
     }),
-    getBabelOutputPlugin({ presets: ['@babel/preset-env'] }),
+    getBabelOutputPlugin({
+      presets: ['@babel/preset-env'],
+      // All optional newlines and whitespace will be omitted when generating code in compact mode.
+      compact: true
+    }),
     terser()
   ],
   external: [
