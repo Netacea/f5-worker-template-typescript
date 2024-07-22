@@ -1,17 +1,13 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "target": "es5",
-    "sourceMap": true,
-    "strict": true,
+    "module": "ESNext",
+    "target": "ESNext",
+    "moduleResolution": "Node",
     "outDir": "./dist",
+    "declaration": false,
     "resolveJsonModule": true,
-    "declaration": true,
-    "types": ["@types/node"],
-    "typeRoots": [
-      "./node_modules/@types",
-      "./types"
-    ]
+    "sourceMap": false,
+    "strict": true
   },
   "include": [
     "index.ts",
