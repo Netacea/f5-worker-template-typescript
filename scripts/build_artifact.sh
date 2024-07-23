@@ -2,13 +2,14 @@
 set -euxo pipefail
 
 # Clean-up in prepartion for bundling
+rm NetaceaF5-v*.tar.gz
 rm -rf ./dist/
 mkdir -p ./dist/extensions/netacea
-mkdir -p ./dist/rules/netacea_mitigate.tcl
+mkdir -p ./dist/rules/
 
 # Copy assets
 cp ./src/version ./src/node_version ./dist/
-cp ./rules/netacea_mitigate.tcl ./dist/rules/netacea_mitigate.tcl
+cp ./rules/netacea_mitigate.tcl ./dist/rules/
 cp ./package.json ./src/NetaceaConfig.json ./dist/extensions/netacea/
 
 # Perform rollup
