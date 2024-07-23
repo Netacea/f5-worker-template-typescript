@@ -2,8 +2,7 @@
 set -euxo pipefail
 
 # Clean-up in prepartion for bundling
-rm NetaceaF5-v*.tar.gz
-rm -rf ./dist/
+rm -rf NetaceaF5-v*.tar.gz ./dist/
 mkdir -p ./dist/extensions/netacea
 mkdir -p ./dist/rules/
 
