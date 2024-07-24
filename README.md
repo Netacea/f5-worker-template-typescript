@@ -18,7 +18,7 @@ After uploading the workspace, under `Local Traffic > iRules > LX Workspaces` cl
 
 ### 🛠 DIY
 
-The following commands should be run while using NodeJs 18 on linux.
+The following commands should be run while using NodeJs 20 on linux.
 
 Ensure the `@netacea/f5` package is up to date by running:
 ```bash
