@@ -34,7 +34,7 @@
   },
   "repository": {},
   "dependencies": {
-    "@netacea/f5": "^4.3.128",
+    "@netacea/f5": "^4.3.147",
     "core-js": "^3.8.0",
     "f5-nodejs": "^1.0.0",
     "regenerator-runtime": "^0.13.7"
