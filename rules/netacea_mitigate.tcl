@@ -14,6 +14,9 @@ when HTTP_REQUEST {
   # strip route domain from ip
   set clientaddress [regsub {%.*} [IP::client_addr] ""]
 
+  # Collect header names for worker to compute a fingerprint hash
+  set headerNames [join [HTTP::header names] ","]
+
   # Handle Captcha
   if { [HTTP::path] equals "/AtaVerifyCaptcha" && [string tolower $method] eq "post"} {
     # Check if there is a Content-Length header
@@ -34,15 +37,19 @@ when HTTP_REQUEST {
       HTTP::collect $content_length
     }
     } else { # Check reputation
-        # set result [ILX::call $handle check $clientaddress $useragent [HTTP::method] [HTTP::uri] [HTTP::cookie value "_mitata"] [HTTP::cookie value "_mitatacaptcha"]]
-        if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::header value "cookie"]} result]} {
+        # Empty "" body placeholder at index 5 keeps headerNames at index 6,
+        # since the worker extracts params by fixed positional index.
+        # Body is "" here (non-POST), but [HTTP::payload] for captcha POST in HTTP_REQUEST_DATA.
+        if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::header value "cookie"] "" $headerNames} result]} {
           log local0.error  "Client - $clientaddress, ILX failure: could not reach mitigate API: $result"
-          set result {"" 0 [] "" false "" []}
+          # 8 elements to match new reply format (index 7 = empty fingerprint)
+          set result {"" 0 [] "" false "" [] ""}
           # Send user graceful error message, then exit event
           return
         }
 
-    if {[info exists result] && [llength $result] == 7}{
+    # >= 7 instead of == 7 for backwards compat with old 7-element replies
+    if {[info exists result] && [llength $result] >= 7}{
       set body  [ lindex $result 0 ]
       set apiCallStatus [ lindex $result 1 ]
       set cookies [ lindex $result 2 ]
@@ -50,15 +57,22 @@ when HTTP_REQUEST {
       set mitigated [ lindex $result 4 ]
       set mitata [ lindex $result 5 ]
       set injectHeaders [ lindex $result 6]
+      # Worker-computed fingerprint at index 7, forwarded to ingest below
+      if {[llength $result] >= 8} {
+        set headerFingerprint [ lindex $result 7 ]
+      } else {
+        set headerFingerprint ""
+      }
       set ilx_request_time [clock clicks -milliseconds]
       set HTTP::mitata $mitata
       set HTTP::sessionStatus $sessionStatus
 
       if { $mitigated } then {
-        # calcluate request time
+        # calculate request time
         set http_response_time [clock clicks -milliseconds]
         set request_time [ expr {$http_response_time - $http_request_time} ]
-        ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
+        # Forward fingerprint at index 11 so ingest logs it as HeaderHash
+        ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint
         HTTP::respond 403 content $body Set-Cookie [join $cookies "; "]
       }
       if { [llength $injectHeaders] == 3} {
@@ -79,7 +93,11 @@ when HTTP_REQUEST_DATA {
     # strip route domain from ip
     set clientaddress [regsub {%.*} [IP::client_addr] ""]
 
-    if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::header value "cookie"] [HTTP::payload]} result]} {
+    # Collected again because HTTP_REQUEST_DATA is a separate event
+    set headerNames [join [HTTP::header names] ","]
+
+    # Added headerNames at index 6 (body/payload already at index 5)
+    if {[catch {ILX::call $handle handleRequest $clientaddress $useragent $method [HTTP::path] [HTTP::header value "cookie"] [HTTP::payload] $headerNames} result]} {
       log local0.error  "Client - $clientaddress, ILX failure: could not handle captcha test"
       # Send user graceful error message, then exit event
       return
@@ -91,6 +109,12 @@ when HTTP_REQUEST_DATA {
     set mitigated [ lindex $result 4 ]
     set mitata [ lindex $result 5 ]
     set injectHeaders [ lindex $result 6]
+    # Extract fingerprint from reply to forward to ingest
+    if {[llength $result] >= 8} {
+      set headerFingerprint [ lindex $result 7 ]
+    } else {
+      set headerFingerprint ""
+    }
     foreach cookie $cookies {
       HTTP::header insert "Set-Cookie" $cookie
     }
@@ -98,8 +122,8 @@ when HTTP_REQUEST_DATA {
     # calcuate request time
     set http_response_time [clock clicks -milliseconds]
     set request_time [ expr {$http_response_time - $http_request_time} ]
-    # ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
-    if {[catch {ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
+    # Forward fingerprint at index 11 so ingest logs it as HeaderHash
+    if {[catch {ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint} result]} {
       log local0.error  "Client - $clientaddress, ILX failure: could not reach ingest API for passed captcha"
       # Send user graceful error message, then exit event
       return
@@ -118,19 +142,28 @@ when HTTP_RESPONSE {
   }
   set clientaddress [regsub {%.*} [IP::client_addr] ""]
 
-  # calcluate request time
+  # calculate request time
   set http_response_time [clock clicks -milliseconds]
   set request_time [ expr {$http_response_time - $http_request_time} ]
 
-  if {[info exists result] && [llength $result] == 7} {
+  # >= 7 instead of == 7 for backwards compat with old 7-element replies
+  if {[info exists result] && [llength $result] >= 7} {
     set sessionStatus [ lindex $result 3 ]
     set mitata [ lindex $result 5 ]
+    # Extract fingerprint to forward to ingest for non-mitigated requests
+    if {[llength $result] >= 8} {
+      set headerFingerprint [ lindex $result 7 ]
+    } else {
+      set headerFingerprint ""
+    }
   } else {
     set sessionStatus ""
     set mitata ""
+    # Default empty when handleRequest was not called or failed
+    set headerFingerprint ""
   }
-  # ILX::call $handle ingest $clientaddress $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus
-  if {[catch {ILX::call $handle ingest $clientaddress $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus} result]} {
+  # Forward fingerprint at index 11 so ingest logs it as HeaderHash
+  if {[catch {ILX::call $handle ingest $clientaddress $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint} result]} {
     log local0.error  "Client - $clientaddress, ILX failure: could not reach ingest API"
     # Send user graceful error message, then exit event
     return
