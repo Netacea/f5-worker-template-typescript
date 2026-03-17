@@ -9,6 +9,7 @@ const f5 = require('f5-nodejs')
 const ilx: IlxServer = new f5.ILXServer()
 
 const netacea = new NetaceaF5(NetaceaConfig as F5ConstructorArgs)
+netacea.registerPolicyHandler(ilx)
 netacea.registerMitigateHandler(ilx)
 netacea.registerIngestHandler(ilx)
 
