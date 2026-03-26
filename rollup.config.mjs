@@ -35,7 +35,8 @@ export default {
     terser(),
     replace({
       // strip explicit core module import, not supported by node 6
-      'require("node:': 'require("'
+      'require("node:': 'require("',
+      preventAssignment: true
     }),
   ],
   external: [
