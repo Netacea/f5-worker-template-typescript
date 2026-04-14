@@ -86,7 +86,7 @@ when HTTP_REQUEST {
           return
         }
 
-    if {[info exists result] && [llength $result] >= 8} {
+    if {[info exists result] && [llength $result] >= 9} {
       set body [lindex $result 0]
       set apiCallStatus [lindex $result 1]
       set sessionStatus [lindex $result 2]
@@ -95,6 +95,7 @@ when HTTP_REQUEST {
       set headerFingerprint [lindex $result 5]
       set requestHeaders [lindex $result 6]
       set responseHeaders [lindex $result 7]
+      set responseStatus [lindex $result 8]
 
       # Set inject headers on request (dynamic - no hardcoded names)
       foreach {hname hval} $requestHeaders {
@@ -105,18 +106,16 @@ when HTTP_REQUEST {
         # calculate request time
         set http_response_time [clock clicks -milliseconds]
         set request_time [expr {$http_response_time - $http_request_time}]
-        log local0.debug "Client - $clientaddress, Netacea mitigate: MITIGATED 403, request_time=${request_time}ms"
-        ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint
 
-        # Build HTTP::respond dynamically from responseHeaders
-        set respondArgs [list HTTP::respond 403 content $body]
+        # Build HTTP::respond dynamically using the worker-provided response status
+        set respondArgs [list HTTP::respond $responseStatus content $body]
         foreach {hname hval} $responseHeaders {
           lappend respondArgs $hname [b64decode $hval]
         }
         eval $respondArgs
       }
     } else {
-      log local0.warn "Client - $clientaddress, Netacea mitigate: unexpected result length [llength $result], expected >= 8"
+      log local0.warn "Client - $clientaddress, Netacea mitigate: unexpected result length [llength $result], expected >= 9"
     }
   }
 }
@@ -157,8 +156,8 @@ when HTTP_REQUEST_DATA {
       return
     }
 
-    if {[llength $result] < 8} {
-      log local0.warn "Client - $clientaddress, Netacea captcha: unexpected result length [llength $result], expected >= 8"
+    if {[llength $result] < 9} {
+      log local0.warn "Client - $clientaddress, Netacea captcha: unexpected result length [llength $result], expected >= 9"
       return
     }
 
@@ -170,17 +169,18 @@ when HTTP_REQUEST_DATA {
     set headerFingerprint [lindex $result 5]
     set requestHeaders [lindex $result 6]
     set responseHeaders [lindex $result 7]
+    set responseStatus [lindex $result 8]
 
     log local0.debug "Client - $clientaddress, Netacea captcha: sessionStatus=$sessionStatus mitigated=$mitigated fingerprint=$headerFingerprint"
 
     set http_response_time [clock clicks -milliseconds]
     set request_time [expr {$http_response_time - $http_request_time}]
-    if {[catch {ILX::call $handle ingest $clientaddress $useragent 403 $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint} ingestResult]} {
+    if {[catch {ILX::call $handle ingest $clientaddress $useragent $responseStatus $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint} ingestResult]} {
       log local0.error "Client - $clientaddress, ILX failure: could not reach ingest API for captcha"
     }
 
     # Build HTTP::respond dynamically
-    set respondArgs [list HTTP::respond 403 content $body]
+    set respondArgs [list HTTP::respond $responseStatus content $body]
     foreach {hname hval} $responseHeaders {
       lappend respondArgs $hname [b64decode $hval]
     }
@@ -220,7 +220,7 @@ when HTTP_RESPONSE {
   set sessionStatus ""
   set mitata ""
   set headerFingerprint ""
-  if {[info exists result] && [llength $result] >= 8} {
+  if {[info exists result] && [llength $result] >= 9} {
     set sessionStatus [lindex $result 2]
     set mitata [lindex $result 4]
     set headerFingerprint [lindex $result 5]
