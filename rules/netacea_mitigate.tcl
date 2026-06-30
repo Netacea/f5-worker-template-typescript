@@ -3,8 +3,10 @@ when RULE_INIT {
   # Actual fetch deferred to first HTTP_REQUEST (ILX::init not available in RULE_INIT).
   set static::mitigation_headers {}
   set static::mitigation_headers_loaded 0
+  set static::mitigation_headers_loaded_at 0
   set static::mitigation_headers_fetch_attempts 0
   set static::mitigation_headers_max_attempts 3
+  set static::mitigation_headers_cache_ttl_ms 10000
   log local0.debug "Netacea RULE_INIT: iRule loaded (v2 with header policy support)"
 }
 
@@ -18,7 +20,8 @@ when HTTP_REQUEST {
   }
 
   # Fetch header policy on first request (ILX::init not available in RULE_INIT)
-  if { !$static::mitigation_headers_loaded } {
+  set now [clock clicks -milliseconds]
+  if { !$static::mitigation_headers_loaded || ($now - $static::mitigation_headers_loaded_at) >= $static::mitigation_headers_cache_ttl_ms } {
     if { $static::mitigation_headers_fetch_attempts < $static::mitigation_headers_max_attempts } {
       incr static::mitigation_headers_fetch_attempts
       if {[catch {ILX::call $handle getMitigationHeaderPolicy} policyResult]} {
@@ -38,6 +41,8 @@ when HTTP_REQUEST {
           set static::mitigation_headers $splitResult
         }
         set static::mitigation_headers_loaded 1
+        set static::mitigation_headers_loaded_at $now
+        set static::mitigation_headers_fetch_attempts 0
         log local0.debug "Client - [IP::client_addr], Netacea policy: loaded [llength $static::mitigation_headers] headers: $static::mitigation_headers"
       }
     }
@@ -175,7 +180,7 @@ when HTTP_REQUEST_DATA {
 
     set http_response_time [clock clicks -milliseconds]
     set request_time [expr {$http_response_time - $http_request_time}]
-    if {[catch {ILX::call $handle ingest $clientaddress $useragent $responseStatus $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint} ingestResult]} {
+    if {[catch {ILX::call $handle ingest $clientaddress $useragent $responseStatus $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint $headerValues} ingestResult]} {
       log local0.error "Client - $clientaddress, ILX failure: could not reach ingest API for captcha"
     }
 
@@ -225,7 +230,7 @@ when HTTP_RESPONSE {
     set mitata [lindex $result 4]
     set headerFingerprint [lindex $result 5]
   }
-  if {[catch {ILX::call $handle ingest $clientaddress $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint} result]} {
+  if {[catch {ILX::call $handle ingest $clientaddress $useragent [HTTP::status] $method $uri "http" $referer [HTTP::header value "Content-Length"] $request_time $mitata $sessionStatus $headerFingerprint $headerValues} result]} {
     log local0.error  "Client - $clientaddress, ILX failure: could not reach ingest API"
     # Send user graceful error message, then exit event
     return
